@@ -299,4 +299,4 @@ pip-selfcheck.json
 
 *.session
 
-voice_messages
+*.ogg
