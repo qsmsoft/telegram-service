@@ -4,8 +4,8 @@ import os
 from telethon import TelegramClient, events
 
 from app.core.config import API_ID, API_HASH
-from database import engine, Base, get_db
-from app.models.models import Message
+from app.db.base import engine, Base, get_db
+from app.models.message import Message
 
 # Initialize database
 Base.metadata.create_all(bind=engine)
