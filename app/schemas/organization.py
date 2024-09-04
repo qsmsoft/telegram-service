@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from app.schemas.schemas import UserBotInfo
+from app.schemas.userbotinfo import UserBotInfo
 
 
 class OrganizationBase(BaseModel):
