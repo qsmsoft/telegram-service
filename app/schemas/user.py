@@ -6,20 +6,20 @@ from pydantic import BaseModel
 from app.schemas.userbotinfo import UserBotInfo
 
 
-class OrganizationBase(BaseModel):
-    name: str
-    email: str
+class UserBase(BaseModel):
+    username: str
+    name: str | None = None
 
 
-class OrganizationCreate(OrganizationBase):
-    pass
+class UserCreate(UserBase):
+    password: str
 
 
-class Organization(OrganizationBase):
+class UserRead(UserBase):
     id: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None = None
     userbot_infos: List[UserBotInfo] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey, func, DateTime
+from sqlalchemy.orm import relationship
 
-from app.db.base import Base
+from app.db.session import Base
 
 
 class UserbotInfo(Base):
@@ -10,7 +11,8 @@ class UserbotInfo(Base):
     api_id = Column(Integer, index=True, nullable=False)
     api_hash = Column(String, nullable=False)
     phone_number = Column(String, nullable=False)
-    organization_id = Column(Integer, ForeignKey("organizations.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
-    organization = relationship("Organization", back_populated="userbot_infos")
+
+    user = relationship("User", back_populates="userbot_infos")
