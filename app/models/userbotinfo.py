@@ -10,9 +10,10 @@ class UserbotInfo(Base):
     id = Column(Integer, primary_key=True, index=True)
     api_id = Column(Integer, index=True, nullable=False)
     api_hash = Column(String, nullable=False)
-    phone_number = Column(String, nullable=False)
+    phone = Column(String, nullable=False, unique=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
 
+    # Relationship to User
     user = relationship("User", back_populates="userbot_infos")

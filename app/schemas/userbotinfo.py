@@ -4,13 +4,13 @@ from pydantic import BaseModel
 class UserbotInfoBase(BaseModel):
     api_id: int
     api_hash: str
-    phone_number: str
+    phone: str
 
 
 class UserBotInfoCreate(UserbotInfoBase):
-    pass
+    user_id: int
 
 
-class UserBotInfo(UserbotInfoBase):
+class UserBotInfoRead(UserbotInfoBase):
     id: int
-    organization_id: int
+    user_id: int

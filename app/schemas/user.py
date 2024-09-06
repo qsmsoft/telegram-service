@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from app.schemas.userbotinfo import UserBotInfo
+from app.schemas.userbotinfo import UserBotInfoRead
 
 
 class UserBase(BaseModel):
@@ -19,7 +19,7 @@ class UserRead(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime | None = None
-    userbot_infos: List[UserBotInfo] = []
+    userbot_infos: List[UserBotInfoRead] = []
 
     class Config:
         from_attributes = True
