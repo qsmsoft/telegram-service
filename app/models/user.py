@@ -15,4 +15,4 @@ class User(Base):
     updated_at = Column(DateTime, onupdate=func.now())
 
     # Relationship to UserBotInfo
-    userbot_infos = relationship("UserbotInfo", back_populates="user")
+    accounts = relationship("Account", back_populates="user")

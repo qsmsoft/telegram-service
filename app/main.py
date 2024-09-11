@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.v1.endpoints import users, userbotinfos, auth
+from app.api.v1.endpoints import users, accounts, auth
 from app.db.session import engine
 from app.models.user import Base
 
