@@ -1,16 +1,16 @@
 from pydantic import BaseModel
 
 
-class UserbotInfoBase(BaseModel):
+class AccountBase(BaseModel):
     api_id: int
     api_hash: str
     phone: str
 
 
-class UserBotInfoCreate(UserbotInfoBase):
+class AccountCreate(AccountBase):
     user_id: int
 
 
-class UserBotInfoRead(UserbotInfoBase):
+class AccountRead(AccountBase):
     id: int
     user_id: int

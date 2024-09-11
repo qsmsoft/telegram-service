@@ -4,8 +4,8 @@ from sqlalchemy.orm import relationship
 from app.db.session import Base
 
 
-class UserbotInfo(Base):
-    __tablename__ = "userbot_infos"
+class Account(Base):
+    __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, index=True)
     api_id = Column(Integer, index=True, nullable=False)
@@ -16,4 +16,4 @@ class UserbotInfo(Base):
     updated_at = Column(DateTime, server_default=func.now())
 
     # Relationship to User
-    user = relationship("User", back_populates="userbot_infos")
+    user = relationship("User", back_populates="accounts")
