@@ -46,7 +46,8 @@ async def handle_new_message(event):
         receiver_id=receiver_id,
         receiver_name=receiver_name,
         content=content,
-        voice_file_path=voice_file_path
+        voice_file_path=voice_file_path,
+        message_id=event.message.id
     )
     db.add(new_message)
     db.commit()
@@ -59,6 +60,7 @@ async def handle_new_message(event):
 async def handle_edited_message(event):
     sender = await event.get_sender()
     receiver = await event.get_chat() if event.is_private else await event.get_input_chat()
+    message_id = event.message.id
 
     sender_id = sender.id
     sender_name = sender.username or sender.first_name
@@ -75,6 +77,7 @@ async def handle_edited_message(event):
     edited_message = db.query(Message).filter_by(
         sender_id=sender_id,
         receiver_id=receiver_id,
+        message_id=message_id,
     ).first()
     edited_message.content = event.raw_text
     db.commit()
@@ -140,22 +143,3 @@ async def add_new_session(sessions):
     session_task = run_client(api_id, api_hash, phone_number, session_name)
     sessions.append(session_task)
     await asyncio.gather(*sessions)
-
-
-async def main():
-    sessions = []
-
-    while True:
-        choice = input('Do you want to add a new session? (yes/no): ').strip().lower()
-        if choice == 'yes':
-            await add_new_session(sessions)
-        else:
-            print('Running existing sessions...')
-            await asyncio.gather(*sessions)
-
-
-with client:
-    client.loop.run_until_complete(main())
-
-if __name__ == "__main__":
-    asyncio.run(main())
