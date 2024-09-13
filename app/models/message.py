@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, BigInteger
+from sqlalchemy import Column, Integer, String, Text, BigInteger, func, DateTime
 
 from app.db.session import Base
 
@@ -13,3 +13,6 @@ class Message(Base):
     receiver_name = Column(String)
     content = Column(Text)
     voice_file_path = Column(String, nullable=True)
+    message_id = Column(BigInteger, index=True, nullable=True)
+    created_at = Column(DateTime, server_default=func.now()),
+    updated_at = Column(DateTime, onupdate=func.now())
