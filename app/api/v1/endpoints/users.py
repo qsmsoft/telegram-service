@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from watchfiles import awatch
 
 from app.crud import user as crud_user
 from app.db.session import get_db
@@ -14,7 +15,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = await crud_user.get_user_by_username(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    return crud_user.create_user(db=db, user=user)
+    return await crud_user.create_user(db=db, user=user)
 
 
 @router.get("/me", response_model=UserRead)

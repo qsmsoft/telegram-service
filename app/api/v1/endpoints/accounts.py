@@ -10,10 +10,10 @@ router = APIRouter()
 
 @router.post("/", response_model=AccountRead)
 async def create_account(account: AccountCreate, db: Session = Depends(get_db)):
-    db_account = await crud_account.get_account_by_phone(db, phone=account.phone)
+    db_account = await crud_account.get_account_by_phone(db=db, phone=account.phone)
     if db_account:
         raise HTTPException(status_code=400, detail="Telegram account already registered")
-    return crud_account.create_account(db=db, account=account)
+    return await crud_account.create_account(db=db, account=account)
 
 
 @router.get("/{account_id}", response_model=AccountRead)
