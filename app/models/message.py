@@ -14,5 +14,5 @@ class Message(Base):
     content = Column(Text)
     voice_file_path = Column(String, nullable=True)
     message_id = Column(BigInteger, index=True, nullable=True)
-    created_at = Column(DateTime, server_default=func.now()),
+    created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())

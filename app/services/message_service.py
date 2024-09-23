@@ -1,17 +1,13 @@
-import asyncio
 import os
 
-from telethon import TelegramClient, events
+from telethon import events
 
-from app.core.config import API_ID, API_HASH
 from app.db.session import engine, Base, get_db
 from app.models.message import Message
+from app.services.account_service import client
 
 # Initialize database
 Base.metadata.create_all(bind=engine)
-
-# Initialize Telegram client
-client = TelegramClient('userbot', int(API_ID), API_HASH)
 
 
 @client.on(events.NewMessage())
@@ -107,39 +103,3 @@ async def send_message(receiver_id, message_text):
     db.refresh(new_message)
 
     print(f"Sent message to {receiver_id}: {message_text}")
-
-
-async def run_client(api_id, api_hash, phone_number, session_name):
-    async with TelegramClient(session_name, api_id, api_hash) as client:
-        await client.start(phone=phone_number)
-        if not await client.is_user_authorized():
-            await client.send_code_request(phone_number)
-            code = input(f'Enter the code for {session_name}: ')
-            await client.sign_in(phone_number, code)
-
-        # Get client's own ID and username
-        me = await client.get_me()
-        client_id = me.id
-        client_username = me.username or me.first_name
-        print(f"Client ID for {session_name}: {client_id}")
-        print(f"Client Username for {session_name}: {client_username}")
-
-        # Add event handler
-        client.add_event_handler(handle_new_message, events.NewMessage())
-
-        # Send a test message
-        await send_message(5651362280, 'test message from server')
-
-        print(f"Client {session_name} is running...")
-        await client.run_until_disconnected()
-
-
-async def add_new_session(sessions):
-    api_id = input('Enter API ID: ')
-    api_hash = input('Enter API Hash: ')
-    phone_number = input('Enter Phone Number: ')
-    session_name = input('Enter Session Name: ')
-
-    session_task = run_client(api_id, api_hash, phone_number, session_name)
-    sessions.append(session_task)
-    await asyncio.gather(*sessions)

@@ -17,3 +17,5 @@ class Account(Base):
 
     # Relationship to User
     user = relationship("User", back_populates="accounts")
+    # Relationship to Session
+    sessions = relationship("Session", back_populates="account")

@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.v1.endpoints import users, accounts, auth
+from app.api.v1.endpoints import users, accounts, auth, sessions as telegram_sessions
 from app.db.session import engine
 from app.models.user import Base
 from app.services.message_service import client
@@ -43,6 +43,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(accounts.router, prefix="/accounts", tags=["accounts"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(telegram_sessions.router, prefix="/sessions", tags=["sessions"])
 
 
 @app.get("/")
