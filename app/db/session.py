@@ -2,9 +2,8 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from mongoengine import connect
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from telemongo import MongoSession
 from telethon import TelegramClient
 
@@ -20,22 +19,18 @@ DATABASE_URL = f'postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
 
-def async_session_generator():
-    return sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-
+async_session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 @asynccontextmanager
 async def get_db():
-    try:
-        async_session = async_session_generator()
-
-        async with async_session() as session:
+    async with async_session_factory() as session:
+        try:
             yield session
-    except:
-        await session.rollback()
-        raise
-    finally:
-        await session.close()
+        except:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 
 SESSION_DB_URL = f'mongodb://{SESSION_DB_HOST}:{SESSION_DB_PORT}/{SESSION_DB_NAME}'
