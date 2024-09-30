@@ -1,22 +1,48 @@
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from mongoengine import connect
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from telemongo import MongoSession
+from telethon import TelegramClient
 
-from app.core.config import DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT
+from app.core.config import DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT, SESSION_DB_HOST, SESSION_DB_PORT, \
+    SESSION_DB_NAME
 
 load_dotenv()
 
-DATABASE_URL = f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+DATABASE_URL = f'postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
-def get_db():
-    db = SessionLocal()
+engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+
+
+def async_session_generator():
+    return sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
+
+@asynccontextmanager
+async def get_db():
     try:
-        yield db
+        async_session = async_session_generator()
+
+        async with async_session() as session:
+            yield session
+    except:
+        await session.rollback()
+        raise
     finally:
-        db.close()
+        await session.close()
+
+
+SESSION_DB_URL = f'mongodb://{SESSION_DB_HOST}:{SESSION_DB_PORT}/{SESSION_DB_NAME}'
+
+
+def telegram_client_connection(api_id: int, api_hash: str) -> TelegramClient:
+    connect(db=SESSION_DB_NAME, host=SESSION_DB_URL)
+    session = MongoSession(database=SESSION_DB_NAME, host=SESSION_DB_URL)
+    client = TelegramClient(session, api_id, api_hash)
+    return client

@@ -20,3 +20,8 @@ PHONE_NUMBER = os.getenv('PHONE_NUMBER')
 secret_key = os.getenv('SECRET_KEY')
 algorithm = os.getenv('ALGORITHM')
 access_token_expire_minutes = os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')
+
+# telegram session database configuration
+SESSION_DB_HOST = os.getenv('SESSION_DB_HOST')
+SESSION_DB_PORT = os.getenv('SESSION_DB_PORT')
+SESSION_DB_NAME = os.getenv('SESSION_DB_NAME')

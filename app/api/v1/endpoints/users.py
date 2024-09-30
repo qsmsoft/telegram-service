@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from watchfiles import awatch
 
 from app.crud import user as crud_user
 from app.db.session import get_db

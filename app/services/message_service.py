@@ -1,105 +1,131 @@
+import asyncio
 import os
 
+from sqlalchemy.future import select
 from telethon import events
 
-from app.db.session import engine, Base, get_db
+from app.db.session import get_db, telegram_client_connection
 from app.models.message import Message
-from app.services.account_service import client
-
-# Initialize database
-Base.metadata.create_all(bind=engine)
+from app.models.telegram_client import TelegramClient as Client
 
 
-@client.on(events.NewMessage())
-async def handle_new_message(event):
-    sender = await event.get_sender()
-    receiver = await event.get_chat() if event.is_private else await event.get_input_chat()
-
-    sender_id = sender.id
-    sender_name = sender.username or sender.first_name
-
-    receiver_id = receiver.id
-    receiver_name = receiver.username or receiver.title
-
-    if sender_id == receiver_id:
-        receiver_id = (await client.get_me()).id
-        receiver_name = (await client.get_me()).username or (await client.get_me()).first_name
-
-    content = event.raw_text if event.raw_text else None
-    voice_file_path = None
-
-    # Check if the message contains a voice message
-    if event.voice:
-        file_name = f"voice_{event.id}.ogg"
-        voice_file_path = os.path.join('../voice_messages', file_name)
-        await event.download_media(voice_file_path)
-
-    # Save message to the database
-    db = next(get_db())
-    new_message = Message(
-        sender_id=sender_id,
-        sender_name=sender_name,
-        receiver_id=receiver_id,
-        receiver_name=receiver_name,
-        content=content,
-        voice_file_path=voice_file_path,
-        message_id=event.message.id
-    )
-    db.add(new_message)
-    db.commit()
-    db.refresh(new_message)
-
-    print(f"Message from {sender_name} to {receiver_name}: {event.raw_text}")
+async def get_all_active_clients():
+    async with get_db() as db:
+        result = await db.execute(select(Client).filter_by(is_active=True))
+        clients = result.scalars().all()
+    return clients
 
 
-@client.on(events.MessageEdited())
-async def handle_edited_message(event):
-    sender = await event.get_sender()
-    receiver = await event.get_chat() if event.is_private else await event.get_input_chat()
-    message_id = event.message.id
-
-    sender_id = sender.id
-    sender_name = sender.username or sender.first_name
-
-    receiver_id = receiver.id
-    receiver_name = receiver.username or receiver.title
-
-    if sender_id == receiver_id:
-        receiver_id = (await client.get_me()).id
-        receiver_name = (await client.get_me()).username or (await client.get_me()).first_name
-
-    # Update message in the database
-    db = next(get_db())
-    edited_message = db.query(Message).filter_by(
-        sender_id=sender_id,
-        receiver_id=receiver_id,
-        message_id=message_id,
-    ).first()
-    edited_message.content = event.raw_text
-    db.commit()
-
-    print(f"Edited message from {sender_name} to {receiver_name}: {event.raw_text}")
+async def save_message(db, sender_id, sender_name, receiver_id, receiver_name, content, message_id,
+                       voice_file_path=None):
+    async with db.begin():
+        new_message = Message(
+            sender_id=sender_id,
+            sender_name=sender_name,
+            receiver_id=receiver_id,
+            receiver_name=receiver_name,
+            content=content,
+            voice_file_path=voice_file_path,
+            message_id=message_id
+        )
+        db.add(new_message)
+    await db.commit()
+    await db.refresh(new_message)
 
 
-async def send_message(receiver_id, message_text):
-    await client.send_message(receiver_id, message_text)
+def register_handlers(client):
+    @client.on(events.NewMessage())
+    async def handle_new_message(event):
+        sender = await event.get_sender()
+        receiver = await event.get_chat() if event.is_private else await event.get_input_chat()
 
-    # Get sender info (client info)
-    me = await client.get_me()
-    sender_id = me.id
-    sender_name = me.username or me.first_name
+        sender_id = sender.id
+        sender_name = sender.username or sender.first_name
 
-    # Save sent message to the database
-    db = next(get_db())
-    new_message = Message(
-        sender_id=sender_id,
-        sender_name=sender_name,
-        receiver_id=receiver_id,
-        receiver_name='Chat' if not isinstance(receiver_id, int) else f'User {receiver_id}',
-        content=message_text
-    )
-    db.add(new_message)
-    db.commit()
-    db.refresh(new_message)
+        receiver_id = receiver.id
+        receiver_name = receiver.username or receiver.first_name
 
-    print(f"Sent message to {receiver_id}: {message_text}")
+        if sender_id == receiver_id:
+            me = await client.get_me()
+            receiver_id = me.id
+            receiver_name = me.username or me.first_name
+
+        content = event.raw_text if event.raw_text else None
+        voice_file_path = None
+
+        if event.voice:
+            file_name = f"voice_{event.id}.ogg"
+            voice_file_path = os.path.join('../voice_messages', file_name)
+            await event.download_media(voice_file_path)
+
+        async  with get_db() as db:
+            await save_message(db, sender_id, sender_name, receiver_id, receiver_name, content, event.message.id,
+                               voice_file_path)
+
+        print(f"Message from {sender_name} to {receiver_name}: {event.raw_text}")
+
+    @client.on(events.MessageEdited())
+    async def handle_edited_message(event):
+        sender = await event.get_sender()
+        receiver = await event.get_chat() if event.is_private else await event.get_input_chat()
+
+        sender_id = sender.id
+        sender_name = sender.username or sender.first_name
+
+        receiver_id = receiver.id
+        receiver_name = receiver.username or receiver.title
+
+        async with get_db() as db:
+            result = await db.execute(select(Message).filter_by(
+                sender_id=sender_id,
+                receiver_id=receiver_id,
+                message_id=event.message.id,
+            ))
+
+            edited_message = result.scalars().first()
+
+            if edited_message:
+                edited_message.content = event.raw_text
+                await db.commit()
+
+        print(f"Edited message from {sender_name} to {receiver_name}: {event.raw_text}")
+
+    async def send_message(receiver_id, message_text):
+        await client.send_message(receiver_id, message_text)
+
+        # Get sender info (client info)
+        me = await client.get_me()
+        sender_id = me.id
+        sender_name = me.username or me.first_name
+
+        # Save sent message to the database
+        async with get_db() as db:
+            async with db.begin():
+                new_message = Message(
+                    sender_id=sender_id,
+                    sender_name=sender_name,
+                    receiver_id=receiver_id,
+                    receiver_name='Chat' if not isinstance(receiver_id, int) else f'User {receiver_id}',
+                    content=message_text
+                )
+                db.add(new_message)
+            await db.commit()
+            await db.refresh(new_message)
+
+        print(f"Sent message to {receiver_id}: {message_text}")
+
+
+async def start_clients():
+    clients_infos = await get_all_active_clients()
+
+    clients = []
+
+    for client_info in clients_infos:
+        client = telegram_client_connection(client_info.api_id, client_info.api_hash)
+
+        await client.start(phone=client_info.phone_number)
+        register_handlers(client)
+
+        clients.append(client)
+
+    await asyncio.gather(*(client.run_until_disconnected() for client in clients))
