@@ -1,7 +1,5 @@
 from fastapi import HTTPException
-from fastapi.params import Depends
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from telethon import TelegramClient
 
@@ -12,7 +10,7 @@ from app.utils.utils import generate_random_string
 
 
 # database dan client information larini oladigan yordamchi funksiya
-async def get_client_info( session_name: str) -> TelegramClientInfo:
+async def get_client_info(session_name: str) -> TelegramClientInfo:
     async with get_db() as session:
         result = await session.execute(select(Client).filter_by(session_name=session_name))
         client_info = result.scalar_one_or_none()
