@@ -15,4 +15,4 @@ class User(Base):
     updated_at = Column(DateTime, onupdate=func.now())
 
     # Relationship to Account
-    accounts = relationship("Account", back_populates="user")
+    telegram_clients = relationship("TelegramClient", back_populates="user")
