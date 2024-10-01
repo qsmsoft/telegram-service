@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from watchfiles import awatch
 
 from app.crud import telegram_client as crud_client
 from app.crud.telegram_client import get_client_info, get_telegram_client, get_client_by_phone
@@ -14,10 +14,10 @@ router = APIRouter()
 
 
 @router.post("/")
-async def create_client(client_info: TelegramClientCreate, session: Session = Depends(get_db)):
-    if await get_client_by_phone(session, client_info.phone):
+async def create_client(client_info: TelegramClientCreate, session: AsyncSession = Depends(get_db)):
+    if await get_client_by_phone(session, client_info.phone_number):
         raise HTTPException(status_code=400, detail="Client already exists.")
-    return await crud_client.create_client(client_info=client_info, session=session)
+    return await crud_client.create_client(client_info=client_info)
 
 
 @router.post("/connect/{session_name}")

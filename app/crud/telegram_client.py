@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from telethon import TelegramClient
 
@@ -28,21 +29,27 @@ async def get_telegram_client(client_info: TelegramClientInfo) -> TelegramClient
     return client
 
 
-async def create_client(client_info: TelegramClientCreate, session: Session):
+async def create_client(client_info: TelegramClientCreate):
     name = generate_random_string()
-    db_client = Client(
-        api_id=client_info.api_id,
-        api_hash=client_info.api_hash,
-        phone_number=client_info.phone_number,
-        session_name=name,
-        user_id=client_info.user_id,
-    )
+    async with get_db() as db_session:
+        async with db_session.begin():
+            db_client = Client(
+                api_id=client_info.api_id,
+                api_hash=client_info.api_hash,
+                phone_number=client_info.phone_number,
+                session_name=name,
+                user_id=client_info.user_id,
+            )
+            db_session.add(db_client)
+        await db_session.commit()
+        await db_session.refresh(db_client)
 
-    session.add(db_client)
-    session.commit()
-    session.refresh(db_client)
     return db_client
 
 
-async def get_client_by_phone(session: Session, phone: str):
-    return session.query(Client).filter_by(phone=phone).first()
+async def get_client_by_phone(session: AsyncSession, phone_number: str):
+    async with session as db_session:
+        result = await db_session.execute(select(Client).filter_by(phone_number=phone_number))
+        client = result.scalar_one_or_none()
+
+    return client
