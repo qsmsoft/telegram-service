@@ -1,14 +1,13 @@
 from contextlib import asynccontextmanager
 
+import redis
 from dotenv import load_dotenv
-from mongoengine import connect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from telemongo import MongoSession
+from teleredis import RedisSession
 from telethon import TelegramClient
 
-from app.core.config import DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT, SESSION_DB_HOST, SESSION_DB_PORT, \
-    SESSION_DB_NAME
+from app.core.config import DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT
 
 load_dotenv()
 
@@ -18,8 +17,8 @@ DATABASE_URL = f'postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
-
 async_session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
 
 @asynccontextmanager
 async def get_db():
@@ -33,11 +32,9 @@ async def get_db():
             await session.close()
 
 
-SESSION_DB_URL = f'mongodb://{SESSION_DB_HOST}:{SESSION_DB_PORT}/{SESSION_DB_NAME}'
-
-
-def telegram_client_connection(api_id: int, api_hash: str) -> TelegramClient:
-    connect(db=SESSION_DB_NAME, host=SESSION_DB_URL)
-    session = MongoSession(database=SESSION_DB_NAME, host=SESSION_DB_URL)
+def telegram_client_connection(session_name: str, api_id: int, api_hash: str) -> TelegramClient:
+    redis_connector = redis.Redis(host='localhost', port=6379, db=0, decode_responses=False)
+    session = RedisSession(session_name, redis_connector)
     client = TelegramClient(session, api_id, api_hash)
+
     return client

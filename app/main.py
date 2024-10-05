@@ -1,24 +1,21 @@
-import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from app.api.v1.endpoints import users, auth, telegram_clients
-from app.services.message_service import start_clients
-
-
-# Create the database tables
-# Base.metadata.create_all(bind=engine)
+from app.services.message_service import run_multiple_clients, clients
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    client_task = asyncio.create_task(start_clients())
-    try:
-        yield
-    finally:
-        client_task.cancel()
-        await client_task
+    await run_multiple_clients()
+
+    yield
+
+    for client in clients:
+        await client.disconnect()
+
+    print("All clients stopped.")
 
 
 # Create the FastAPI app using the lifespan handler
