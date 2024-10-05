@@ -1,10 +1,9 @@
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 from telethon import TelegramClient
 
-from app.db.session import telegram_client_connection, get_db
+from app.db.session import get_db, telegram_client_connection
 from app.models.telegram_client import TelegramClient as Client
 from app.schemas.telegram_client import TelegramClientInfo, TelegramClientCreate
 from app.utils.utils import generate_random_string
@@ -24,7 +23,7 @@ async def get_client_info(session_name: str) -> TelegramClientInfo:
 
 # dinamik TelegramClient funksiyasi
 async def get_telegram_client(client_info: TelegramClientInfo) -> TelegramClient:
-    client = telegram_client_connection(client_info.api_id, client_info.api_hash)
+    client = telegram_client_connection(client_info.session_name, client_info.api_id, client_info.api_hash)
     await client.connect()
     return client
 

@@ -8,6 +8,8 @@ from app.db.session import get_db, telegram_client_connection
 from app.models.message import Message
 from app.models.telegram_client import TelegramClient as Client
 
+clients = []
+
 
 async def get_all_active_clients():
     async with get_db() as db:
@@ -115,17 +117,26 @@ def register_handlers(client):
         print(f"Sent message to {receiver_id}: {message_text}")
 
 
-async def start_clients():
-    clients_infos = await get_all_active_clients()
+async def start_client(session_name: str, api_id: int, api_hash: str):
+    client = telegram_client_connection(session_name, api_id, api_hash)
+    register_handlers(client)
 
-    clients = []
+    await client.connect()
 
-    for client_info in clients_infos:
-        client = telegram_client_connection(client_info.api_id, client_info.api_hash)
 
-        await client.start(phone=client_info.phone_number)
-        register_handlers(client)
+async def run_multiple_clients():
+    clients_info = await get_all_active_clients()
 
-        clients.append(client)
+    global clients
 
-    await asyncio.gather(*(client.run_until_disconnected() for client in clients))
+    tasks = []
+
+    for client_info in clients_info:
+        task = asyncio.create_task(start_client(
+            client_info.session_name,
+            client_info.api_id,
+            client_info.api_hash
+        ))
+        tasks.append(task)
+
+    clients = await asyncio.gather(*tasks)
