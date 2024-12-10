@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from watchfiles import awatch
 
-from app.crud import telegram_client as crud_client
-from app.crud.telegram_client import get_client_info, get_telegram_client, get_client_by_phone
+from app.crud import accounts as crud_client
+from app.crud.accounts import get_account_info, get_account, get_account_by_phone
 from app.db.session import get_db
 from app.models.account_model import Account
 from app.schemas.account_schema import AccountCreate
@@ -15,17 +15,17 @@ router = APIRouter()
 
 @router.post("/")
 async def create_client(client_info: AccountCreate, session: AsyncSession = Depends(get_db)):
-    if await get_client_by_phone(session, client_info.phone_number):
+    if await get_account_by_phone(session, client_info.phone_number):
         raise HTTPException(status_code=400, detail="Client already exists.")
-    return await crud_client.create_client(client_info=client_info)
+    return await crud_client.create_account(account_info=client_info)
 
 
 @router.post("/connect/{session_name}")
 async def connect(session_name: str):
-    client_info = await get_client_info(session_name)
+    client_info = await get_account_info(session_name)
 
     try:
-        client = await get_telegram_client(client_info)
+        client = await get_account(client_info)
         if not await client.is_user_authorized():
             return {"message": "Session expired. Re-login required."}
         return {"message": "Connected using previous session!"}
@@ -35,10 +35,10 @@ async def connect(session_name: str):
 
 @router.post("/send_code/{session_name}")
 async def send_code(session_name: str):
-    client_info = await get_client_info(session_name)
+    client_info = await get_account_info(session_name)
 
     try:
-        client = await get_telegram_client(client_info)
+        client = await get_account(client_info)
         if not await client.is_user_authorized():
             sent_code = await client.send_code_request(client_info.phone_number)
             async with get_db() as session:
@@ -58,10 +58,10 @@ async def send_code(session_name: str):
 
 @router.post("/login/{session_name}")
 async def login(session_name: str, code: str = Body(..., embed=True)):
-    client_info = await get_client_info(session_name)
+    client_info = await get_account_info(session_name)
 
     try:
-        client = await get_telegram_client(client_info)
+        client = await get_account(client_info)
         if not await client.is_user_authorized():
             await client.sign_in(client_info.phone_number, code, phone_code_hash=client_info.phone_code_hash)
             await status_changed(client_info.phone_number)
@@ -73,10 +73,10 @@ async def login(session_name: str, code: str = Body(..., embed=True)):
 
 @router.post("/disconnect/{session_name}")
 async def disconnect(session_name: str):
-    client_info = await get_client_info(session_name)
+    client_info = await get_account_info(session_name)
 
     try:
-        client = await get_telegram_client(client_info)
+        client = await get_account(client_info)
         if client.is_connected():
             await client.disconnected
         return {"message": f"Disconnected from Telegram session {session_name}!"}
@@ -86,10 +86,10 @@ async def disconnect(session_name: str):
 
 @router.get("/status/{session_name}")
 async def status(session_name: str):
-    client_info = await get_client_info(session_name)
+    client_info = await get_account_info(session_name)
 
     try:
-        client = await get_telegram_client(client_info)
+        client = await get_account(client_info)
         is_connected = client.is_connected()
         return {"connected": is_connected}
     except Exception as e:
@@ -98,9 +98,9 @@ async def status(session_name: str):
 
 @router.get("/logout/{session_name}")
 async def logout(session_name: str):
-    client_info = await get_client_info(session_name)
+    client_info = await get_account_info(session_name)
 
-    client = await get_telegram_client(client_info)
+    client = await get_account(client_info)
     await client.log_out()
     await status_changed(client_info.phone_number)
 

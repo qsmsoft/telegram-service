@@ -25,7 +25,7 @@ async def get_db():
             await session.close()
 
 
-def telegram_client_connection(session_name: str, api_id: int, api_hash: str) -> TelegramClient:
+def account_connection(session_name: str, api_id: int, api_hash: str) -> TelegramClient:
     redis_connector = Settings.redis_connector()
     session = RedisSession(session_name, redis_connector)
     client = TelegramClient(session, api_id, api_hash)

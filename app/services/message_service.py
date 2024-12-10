@@ -4,7 +4,7 @@ import os
 from sqlalchemy.future import select
 from telethon import events
 
-from app.db.session import get_db, telegram_client_connection
+from app.db.session import get_db, account_connection
 from app.models.message_model import Message
 from app.services.account_service import get_all_active_accounts
 
@@ -111,7 +111,7 @@ def register_handlers(client):
 
 
 async def start_client(session_name: str, api_id: int, api_hash: str):
-    client = telegram_client_connection(session_name, api_id, api_hash)
+    client = account_connection(session_name, api_id, api_hash)
     register_handlers(client)
 
     await client.connect()
