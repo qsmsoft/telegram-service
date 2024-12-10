@@ -4,13 +4,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from telethon import TelegramClient
 
 from app.db.session import get_db, telegram_client_connection
-from app.models.telegram_client import TelegramClient as Client
-from app.schemas.telegram_client import TelegramClientInfo, TelegramClientCreate
+from app.models.account_model import Account as Client
+from app.schemas.account_schema import AccountInfo, AccountCreate
 from app.utils.utils import generate_random_string
 
 
 # database dan client information larini oladigan yordamchi funksiya
-async def get_client_info(session_name: str) -> TelegramClientInfo:
+async def get_client_info(session_name: str) -> AccountInfo:
     async with get_db() as session:
         result = await session.execute(select(Client).filter_by(session_name=session_name))
         client_info = result.scalar_one_or_none()
@@ -18,17 +18,17 @@ async def get_client_info(session_name: str) -> TelegramClientInfo:
     if not client_info:
         raise HTTPException(status_code=404, detail="Client not found")
 
-    return TelegramClientInfo.model_validate(client_info)
+    return AccountInfo.model_validate(client_info)
 
 
 # dinamik TelegramClient funksiyasi
-async def get_telegram_client(client_info: TelegramClientInfo) -> TelegramClient:
+async def get_telegram_client(client_info: AccountInfo) -> TelegramClient:
     client = telegram_client_connection(client_info.session_name, client_info.api_id, client_info.api_hash)
     await client.connect()
     return client
 
 
-async def create_client(client_info: TelegramClientCreate):
+async def create_client(client_info: AccountCreate):
     name = generate_random_string()
     async with get_db() as db_session:
         async with db_session.begin():

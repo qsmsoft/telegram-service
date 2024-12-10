@@ -6,15 +6,15 @@ from watchfiles import awatch
 from app.crud import telegram_client as crud_client
 from app.crud.telegram_client import get_client_info, get_telegram_client, get_client_by_phone
 from app.db.session import get_db
-from app.models.telegram_client import TelegramClient
-from app.schemas.telegram_client import TelegramClientCreate
-from app.services.telegram_client_service import status_changed
+from app.models.account_model import Account
+from app.schemas.account_schema import AccountCreate
+from app.services.account_service import status_changed
 
 router = APIRouter()
 
 
 @router.post("/")
-async def create_client(client_info: TelegramClientCreate, session: AsyncSession = Depends(get_db)):
+async def create_client(client_info: AccountCreate, session: AsyncSession = Depends(get_db)):
     if await get_client_by_phone(session, client_info.phone_number):
         raise HTTPException(status_code=400, detail="Client already exists.")
     return await crud_client.create_client(client_info=client_info)
@@ -42,7 +42,7 @@ async def send_code(session_name: str):
         if not await client.is_user_authorized():
             sent_code = await client.send_code_request(client_info.phone_number)
             async with get_db() as session:
-                result = await session.execute(select(TelegramClient).filter_by(session_name=session_name))
+                result = await session.execute(select(Account).filter_by(session_name=session_name))
                 client_info = result.scalar_one_or_none()
 
                 client_info.phone_code_hash = sent_code.phone_code_hash

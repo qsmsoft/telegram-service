@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from app.schemas.telegram_client import TelegramClientRead
+from app.schemas.account_schema import AccountRead
 
 
 class UserBase(BaseModel):
@@ -19,7 +19,7 @@ class UserRead(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime | None = None
-    telegram_clients: List[TelegramClientRead] = []
+    accounts: List[AccountRead]
 
     class Config:
         from_attributes = True

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, BigInteger, func, DateTime
 
-from app.db.session import Base
+from app.models.base_model import Base
 
 
 class Message(Base):

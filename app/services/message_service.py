@@ -5,17 +5,10 @@ from sqlalchemy.future import select
 from telethon import events
 
 from app.db.session import get_db, telegram_client_connection
-from app.models.message import Message
-from app.models.telegram_client import TelegramClient as Client
+from app.models.message_model import Message
+from app.services.account_service import get_all_active_accounts
 
 clients = []
-
-
-async def get_all_active_clients():
-    async with get_db() as db:
-        result = await db.execute(select(Client).filter_by(is_active=True))
-        clients = result.scalars().all()
-    return clients
 
 
 async def save_message(db, sender_id, sender_name, receiver_id, receiver_name, content, message_id,
@@ -125,7 +118,7 @@ async def start_client(session_name: str, api_id: int, api_hash: str):
 
 
 async def run_multiple_clients():
-    clients_info = await get_all_active_clients()
+    clients_info = await get_all_active_accounts()
 
     global clients
 

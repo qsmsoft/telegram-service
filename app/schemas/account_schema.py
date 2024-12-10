@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class TelegramClientBase(BaseModel):
+class AccountBase(BaseModel):
     api_id: int
     api_hash: str
     phone_number: str
@@ -11,18 +11,18 @@ class TelegramClientBase(BaseModel):
 
 
 
-class TelegramClientCreate(TelegramClientBase):
+class AccountCreate(AccountBase):
     user_id: int
     session_name: str = None
 
 
-class TelegramClientRead(TelegramClientBase):
+class AccountRead(AccountBase):
     id: int
     user_id: int
     is_active: bool
 
 
-class TelegramClientInfo(TelegramClientBase):
+class AccountInfo(AccountBase):
     session_name: str
     class Config:
         from_attributes = True

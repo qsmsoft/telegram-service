@@ -21,7 +21,6 @@ async def lifespan(app: FastAPI):
 # Create the FastAPI app using the lifespan handler
 app = FastAPI(lifespan=lifespan)
 
-# Include the user API router
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(telegram_clients.router, prefix="/clients", tags=["clients"])

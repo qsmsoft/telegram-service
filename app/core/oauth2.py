@@ -1,25 +1,20 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import secret_key, algorithm, access_token_expire_minutes
+from app.core.config import Settings
 from app.core.security import verify_password
 from app.crud.user import get_user_by_username
 
-# to get a string like this run:
-# openssl rand -hex 32
-# Secret key to encode JWT tokens (keep this secret in production)
-SECRET_KEY = secret_key
-ALGORITHM = algorithm
-ACCESS_TOKEN_EXPIRE_MINUTES = int(access_token_expire_minutes)
+config = Settings.jwt_config()
 
 # OAuth2PasswordBearer instance to handle OAuth2 token requests
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-async def authenticate_user(db: Session, username: str, password: str):
+async def authenticate_user(db: AsyncSession, username: str, password: str):
     user = await get_user_by_username(db, username)
     if not user:
         return False
@@ -27,11 +22,12 @@ async def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
+
 async def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=config['access_token_expire_minutes'])
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, config['secret_key'], algorithm=config['algorithm'])

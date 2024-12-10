@@ -6,8 +6,8 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.security import hashed_password as hashed_pass
 from app.db.session import get_db
-from app.models.user import User
-from app.schemas.user import UserCreate
+from app.models.user_model import User
+from app.schemas.user_schema import UserCreate
 
 
 async def get_user(user_id: int, session: AsyncSession):

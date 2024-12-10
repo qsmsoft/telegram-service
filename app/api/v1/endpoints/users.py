@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.crud import user as crud_user
 from app.db.session import get_db
 from app.dependencies.auth import get_current_user
-from app.schemas.user import UserRead, UserCreate
+from app.schemas.user_schema import UserRead, UserCreate
 
 router = APIRouter()
 

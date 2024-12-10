@@ -1,28 +1,21 @@
 from contextlib import asynccontextmanager
 
-import redis
-from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from teleredis import RedisSession
 from telethon import TelegramClient
 
-from app.core.config import DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, DB_PORT
+from app.core.config import Settings
 
-load_dotenv()
-
-Base = declarative_base()
-
-DATABASE_URL = f'postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+DATABASE_URL = Settings.database_url()
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
-async_session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 @asynccontextmanager
 async def get_db():
-    async with async_session_factory() as session:
+    async with async_session() as session:
         try:
             yield session
         except:
@@ -33,7 +26,7 @@ async def get_db():
 
 
 def telegram_client_connection(session_name: str, api_id: int, api_hash: str) -> TelegramClient:
-    redis_connector = redis.Redis(host='localhost', port=6379, db=0, decode_responses=False)
+    redis_connector = Settings.redis_connector()
     session = RedisSession(session_name, redis_connector)
     client = TelegramClient(session, api_id, api_hash)
 

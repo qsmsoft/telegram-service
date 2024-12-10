@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func, Boolean
 from sqlalchemy.orm import relationship
 
-from app.db.session import Base
+from app.models.base_model import Base
 
 
-class TelegramClient(Base):
-    __tablename__ = "telegram_clients"
+class Account(Base):
+    __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, index=True)
     api_id = Column(Integer, index=True, unique=True)
