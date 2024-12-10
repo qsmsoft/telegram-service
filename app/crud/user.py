@@ -1,5 +1,3 @@
-from typing import List
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
@@ -12,7 +10,7 @@ from app.schemas.user_schema import UserCreate
 
 async def get_user(user_id: int, session: AsyncSession):
     async with session as db_session:
-        result = await db_session.execute(select(User).options(joinedload(User.telegram_clients)).filter_by(id=user_id))
+        result = await db_session.execute(select(User).options(joinedload(User.accounts)).filter_by(id=user_id))
         user = result.unique().scalar_one_or_none()
     return user
 
@@ -26,7 +24,7 @@ async def get_user_by_username(session: AsyncSession, username: str):
 
 async def get_users(session: AsyncSession, skip: int = 0, limit: int = 10):
     async with session as db_session:
-        result = await db_session.execute(select(User).options(selectinload(User.telegram_clients)).offset(skip).limit(limit))
+        result = await db_session.execute(select(User).options(selectinload(User.accounts)).offset(skip).limit(limit))
         users = result.scalars().all()
     return users
 
@@ -38,13 +36,13 @@ async def create_user(user: UserCreate):
             db_user = User(
                 username=user.username,
                 name=user.name,
-                hashed_password=hashed_password,
+                password=hashed_password,
             )
             db_session.add(db_user)
         await db_session.commit()
         await db_session.refresh(db_user)
 
         result = await db_session.execute(
-            select(User).options(joinedload(User.telegram_clients)).filter_by(username=user.username))
+            select(User).options(joinedload(User.accounts)).filter_by(username=user.username))
         user = result.unique().scalar_one_or_none()
     return user
