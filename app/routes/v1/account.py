@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from watchfiles import awatch
 
 from app.crud import accounts as crud_client
 from app.crud.accounts import get_account_info, get_account, get_account_by_phone
