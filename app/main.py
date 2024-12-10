@@ -2,7 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.v1.routes import user, auth, account
+from app.routes.v1 import user
+from app.routes.v1 import account, auth
 from app.services.message_service import run_multiple_clients, clients
 
 
