@@ -1,5 +1,8 @@
+from sqlalchemy import BIGINT
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    pass
+    type_annotation_map = {
+        int: BIGINT
+    }
