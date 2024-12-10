@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.v1.endpoints import users, auth, telegram_clients
+from app.api.v1.endpoints import user, auth, account
 from app.services.message_service import run_multiple_clients, clients
 
 
@@ -21,11 +21,11 @@ async def lifespan(app: FastAPI):
 # Create the FastAPI app using the lifespan handler
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(telegram_clients.router, prefix="/clients", tags=["clients"])
+app.include_router(account.router, prefix="/accounts", tags=["accounts"])
 
 
 @app.get("/")
 async def read_root(self):
-    return {"message": "Welcome to FastAPI!"}
+    return {"message": "Welcome to Telegram-Service!"}
