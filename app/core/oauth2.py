@@ -4,9 +4,9 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Settings
+from app.core.settings import Settings
 from app.core.security import verify_password
-from app.crud.user import get_user_by_username
+from app.routes.user import get_user_by_username
 
 config = Settings.jwt_config()
 
@@ -15,7 +15,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 async def authenticate_user(db: AsyncSession, username: str, password: str):
-    user = await get_user_by_username(db, username)
+    user = await get_user_by_username(db = db, username = username)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):

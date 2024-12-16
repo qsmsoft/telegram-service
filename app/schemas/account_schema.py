@@ -16,7 +16,7 @@ class AccountCreate(AccountBase):
     session_name: str = None
 
 
-class AccountRead(AccountBase):
+class AccountResponse(AccountBase):
     id: int
     user_id: int
     is_active: bool
