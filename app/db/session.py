@@ -4,25 +4,24 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from teleredis import RedisSession
 from telethon import TelegramClient
 
-from app.core.config import Settings
+from app.core.settings import Settings
 
 DATABASE_URL = Settings.database_url()
 
-engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+engine = create_async_engine(DATABASE_URL, echo=True)
 
-async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+async_session = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
 
 @asynccontextmanager
-async def get_db():
+async def get_db() -> AsyncSession:
     async with async_session() as session:
         try:
             yield session
-        except:
+            await session.commit()
+        except Exception:
             await session.rollback()
             raise
-        finally:
-            await session.close()
 
 
 def account_connection(session_name: str, api_id: int, api_hash: str) -> TelegramClient:
