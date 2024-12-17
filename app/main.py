@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi_msgspec.responses import MsgSpecJSONResponse
 
 from app.routes import auth, account, user
 from app.services.message_service import run_multiple_clients, clients
@@ -19,7 +20,7 @@ async def lifespan(app: FastAPI):
 
 
 # Create the FastAPI app using the lifespan handler
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, default_response_class=MsgSpecJSONResponse)
 
 app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
