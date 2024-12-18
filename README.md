@@ -3,7 +3,7 @@
 #### to use this service you must have the following dependencies installed:
 
 - [FastAPI](https://fastapi.tiangolo.com/)
-- [msgspec](https://jcristharif.com/msgspec/index.html)
+- [Pydantic](https://docs.pydantic.dev/latest/)
 - [SQLAlchemy](https://www.sqlalchemy.org/)
 - [uvicorn](https://www.starlette.io/)
 - [Telethon](https://telethon.readthedocs.io/en/latest/)
