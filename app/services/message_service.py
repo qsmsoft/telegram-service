@@ -4,7 +4,7 @@ import os
 from sqlalchemy.future import select
 from telethon import events
 
-from app.db.session import get_db, account_connection
+from app.db.config import get_async_session, account_connection
 from app.models.message_model import Message
 from app.services.account_service import get_all_active_accounts
 
@@ -53,7 +53,7 @@ def register_handlers(client):
             voice_file_path = os.path.join('../voice_messages', file_name)
             await event.download_media(voice_file_path)
 
-        async  with get_db() as db:
+        async  with get_async_session() as db:
             await save_message(db, sender_id, sender_name, receiver_id, receiver_name, content, event.message.id,
                                voice_file_path)
 
@@ -70,7 +70,7 @@ def register_handlers(client):
         receiver_id = receiver.id
         receiver_name = receiver.username or receiver.title
 
-        async with get_db() as db:
+        async with get_async_session() as db:
             result = await db.execute(select(Message).filter_by(
                 sender_id=sender_id,
                 receiver_id=receiver_id,
@@ -94,7 +94,7 @@ def register_handlers(client):
         sender_name = me.username or me.first_name
 
         # Save sent message to the database
-        async with get_db() as db:
+        async with get_async_session() as db:
             async with db.begin():
                 new_message = Message(
                     sender_id=sender_id,

@@ -1,31 +1,45 @@
 from typing import List, Optional
 
-from fastapi import HTTPException
+from sqlalchemy import update, delete
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
-from app.core.security import hashed_password
 from app.models.user_model import User
-from app.schemas.user_schema import UserFilter, UserCreate, UserBase
+from app.schemas.user_schema import UserFilter, UserCreate, UserUpdate
 
 
 class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_user_by_id(self, user_id: int) -> User:
-        query = select(User).options(selectinload(User.accounts)).where(User.id == user_id)
+    async def create(self, user: UserCreate) -> User:
+        db_user = User(**user.model_dump())
+        self.db.add(db_user)
+        try:
+            await self.db.commit()
+            await self.db.refresh(db_user)
+            return db_user
+        except IntegrityError:
+            await self.db.rollback()
+            raise
 
+    async def get(self, user_id: int) -> Optional[User]:
+        query = select(User).options(selectinload(User.accounts)).where(User.id == user_id)
         result = await self.db.execute(query)
         user = result.scalar_one_or_none()
 
-        if user is None:
-            raise HTTPException(status_code=404, detail="User not found")
+        return user
+
+    async def get_by_username(self, username: str) -> User:
+        query = select(User).options(selectinload(User.accounts)).where(User.username == username)
+        result = await self.db.execute(query)
+        user = result.scalar_one_or_none()
 
         return user
 
-    async def get_users(self, filter: UserFilter = None, skip: int = 0, limit: int = 100) -> List[User]:
+    async def list(self, filter: Optional[UserFilter] = None, skip: int = 0, limit: int = 100) -> List[User]:
         query = select(User).options(selectinload(User.accounts))
 
         if filter:
@@ -42,52 +56,19 @@ class UserRepository:
 
         return list(result.scalars())
 
-    async def create_user(self, user: UserCreate) -> User:
-        user.password = hashed_password(user.password)
-        db_user = User(**user.model_dump())
-
+    async def update(self, user_id: int, user: UserUpdate) -> Optional[User]:
+        query = update(User).where(User.id == user_id).values(**user.model_dump(exclude_unset=True))
         try:
-            self.db.add(db_user)
+            await self.db.execute(query)
             await self.db.commit()
-            await self.db.refresh(db_user)
-
-        except Exception as e:
+            return await self.get(user_id)
+        except IntegrityError:
             await self.db.rollback()
-            raise e
+            raise
 
-        return db_user
-
-    async def update_user(self, user_id: int, user: UserBase) -> Optional[User]:
-        result = await self.db.execute(select(User).options(selectinload(User.accounts)).where(User.id == user_id))
-        db_user = result.scalar_one_or_none()
-
-        if db_user:
-            return None
-
-        for key, value in user.model_dump().items():
-            if value is not None:
-                setattr(db_user, key, value)
-
-        await self.db.commit()
-        await self.db.refresh(db_user)
-
-        return db_user
-
-    async def delete_user(self, user_id: int) -> Optional[User]:
-        query = select(User).options(selectinload(User.accounts)).where(User.id == user_id)
-        result = await self.db.execute(query)
-        db_user = result.scalar_one_or_none()
-
-        if not db_user:
-            return None
-
-        await self.db.delete(db_user)
+    async def delete(self, user_id: int) -> bool:
+        delete_query = delete(User).where(User.id == user_id)
+        deleted_rows = await self.db.execute(delete_query)
         await self.db.commit()
 
-        return db_user
-
-    async def get_user_by_username(self, username: str) -> User:
-        query = select(User).options(selectinload(User.accounts)).where(User.username == username)
-        result = await self.db.execute(query)
-
-        return result.scalar_one_or_none()
+        return deleted_rows.rowcount > 0

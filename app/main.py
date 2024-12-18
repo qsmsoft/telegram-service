@@ -1,30 +1,36 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi_msgspec.responses import MsgSpecJSONResponse
+from fastapi_cli.cli import logger
 
-from app.routes import auth, account, user
+from app.db.config import init_db, engine
+from app.routes import user
 from app.services.message_service import run_multiple_clients, clients
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await run_multiple_clients()
+    try:
+        # await init_db()
+        await run_multiple_clients()
+        yield
 
-    yield
+    finally:
+        for client in clients:
+            await client.disconnect()
 
-    for client in clients:
-        await client.disconnect()
+        # await engine.dispose()
 
-    print("All clients stopped.")
+    logger.info("All clients stopped.")
 
 
 # Create the FastAPI app using the lifespan handler
-app = FastAPI(lifespan=lifespan, default_response_class=MsgSpecJSONResponse)
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(user.router, prefix="/users", tags=["users"])
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(account.router, prefix="/accounts", tags=["accounts"])
+
+
+# app.include_router(account.router, prefix="/accounts", tags=["accounts"])
 
 
 @app.get("/")
