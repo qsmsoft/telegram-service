@@ -53,8 +53,9 @@ class UserRepository:
                 query = query.where(User.created_at <= filter.created_at_end)
 
         result = await self.db.execute(query.offset(skip).limit(limit))
+        users = list(result.scalars())
 
-        return list(result.scalars())
+        return users
 
     async def update(self, user_id: int, user: UserUpdate) -> Optional[User]:
         query = update(User).where(User.id == user_id).values(**user.model_dump(exclude_unset=True))
