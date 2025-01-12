@@ -1,19 +1,19 @@
 """create accounts table
 
-Revision ID: 251352b3f78b
-Revises: 140d8810a85a
-Create Date: 2024-12-10 16:41:31.501307
+Revision ID: ed5c1243f031
+Revises: ce0e111e778f
+Create Date: 2025-01-12 13:18:55.027877
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy import DDL
 
 # revision identifiers, used by Alembic.
-revision: str = '251352b3f78b'
-down_revision: Union[str, None] = '140d8810a85a'
+revision: str = 'ed5c1243f031'
+down_revision: Union[str, None] = 'ce0e111e778f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -34,7 +34,7 @@ def upgrade() -> None:
     sa.Column('deleted_by', sa.BIGINT(), nullable=True),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -42,6 +42,30 @@ def upgrade() -> None:
     op.create_index(op.f('ix_accounts_id'), 'accounts', ['id'], unique=False)
     op.create_index(op.f('ix_accounts_user_id'), 'accounts', ['user_id'], unique=False)
     # ### end Alembic commands ###
+
+    # ### updated_at trigger - Corrected ###
+    op.execute(DDL(
+        """
+        CREATE OR REPLACE FUNCTION update_accounts_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW.updated_at = now();
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+    ))
+
+    op.execute(DDL(
+        """
+        CREATE TRIGGER accounts_updated_at_trigger
+        BEFORE UPDATE
+        ON accounts
+        FOR EACH ROW
+        EXECUTE PROCEDURE update_accounts_updated_at();
+        """
+    ))
+    # ### end updated_at trigger ###
 
 
 def downgrade() -> None:
@@ -51,3 +75,16 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_accounts_api_id'), table_name='accounts')
     op.drop_table('accounts')
     # ### end Alembic commands ###
+
+    # ### drop updated_at trigger - Corrected ###
+    op.execute(DDL(
+        """
+        DROP TRIGGER IF EXISTS accounts_updated_at_trigger ON accounts;
+        """
+    ))
+    op.execute(DDL(
+        """
+        DROP FUNCTION IF EXISTS update_accounts_updated_at();
+        """
+    ))
+    # ### end drop updated_at trigger ###

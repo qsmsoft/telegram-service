@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "tg-svc"
+name = "telegram-service"
 version = "0.1.0"
 description = ""
 authors = ["qsmsoft <qsmsoft@gmial.com>"]
